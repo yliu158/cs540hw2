@@ -102,8 +102,8 @@ namespace cs540 {
 		Iterator operator++(int){Iterator retv = Iterator(this->an, this->map);operator++();return retv;}
 		Iterator& operator--();
 		Iterator operator--(int) {Iterator retv = Iterator(this->an, this->map);operator--();return retv;}
-		const ValueType & operator*() const{return *(&this->an->valObj);}
-		const ValueType * operator->() const{return &this->an->valObj;}
+		ValueType & operator*() const{return *(&this->an->valObj);}
+		ValueType * operator->() const{return &this->an->valObj;}
 		bool operator==(const Iterator & it) {return an == it.an;}
 		bool operator!=(const Iterator & it) {return an != it.an;}
 		bool operator==(const ConstIterator & it) {return an == it.an;}
