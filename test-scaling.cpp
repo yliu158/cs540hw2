@@ -515,102 +515,102 @@ int main() {
 
   const char *w = demangle(typeid(cs540::StdMapWrapper<int,int>));
   const char *m = demangle(typeid(cs540::Map<int,int>));
-//
-//   {
-//     dispTestName("Ascending insert", m);
-//     ascendingInsert<cs540::Map<int,int>>(1000);
-//     ascendingInsert<cs540::Map<int,int>>(10000);
-//     ascendingInsert<cs540::Map<int,int>>(100000);
-//     ascendingInsert<cs540::Map<int,int>>(1000000);
-//     ascendingInsert<cs540::Map<int,int>>(10000000);
-//     dispTestName("Ascending insert", w);
-//     ascendingInsert<cs540::StdMapWrapper<int,int>>(1000);
-//     ascendingInsert<cs540::StdMapWrapper<int,int>>(10000);
-//     ascendingInsert<cs540::StdMapWrapper<int,int>>(100000);
-//     ascendingInsert<cs540::StdMapWrapper<int,int>>(1000000);
-//     ascendingInsert<cs540::StdMapWrapper<int,int>>(10000000);
-//   }
-//
-//   {
-//     dispTestName("Descending insert", m);
-//     descendingInsert<cs540::Map<int,int>>(1000);
-//     descendingInsert<cs540::Map<int,int>>(10000);
-//     descendingInsert<cs540::Map<int,int>>(100000);
-//     descendingInsert<cs540::Map<int,int>>(1000000);
-//     descendingInsert<cs540::Map<int,int>>(10000000);
-//     dispTestName("Descending insert", w);
-//     descendingInsert<cs540::StdMapWrapper<int,int>>(1000);
-//     descendingInsert<cs540::StdMapWrapper<int,int>>(10000);
-//     descendingInsert<cs540::StdMapWrapper<int,int>>(100000);
-//     descendingInsert<cs540::StdMapWrapper<int,int>>(1000000);
-//     descendingInsert<cs540::StdMapWrapper<int,int>>(10000000);
-//   }
-//
-//   {
-//     dispTestName("Delete test", m);
-//     deleteTest<cs540::Map<int,int>>();
-//     dispTestName("Delete test", w);
-//     deleteTest<cs540::StdMapWrapper<int,int>>();
-//   }
-//
-//   {
-//     dispTestName("Find test", m);
-//     findTest<cs540::Map<int,int>>();
-//     dispTestName("Find test", w);
-//     findTest<cs540::StdMapWrapper<int,int>>();
-//   }
-//
-//   /*
-//     Remember that some of these maps get quite large - iteration times may be affected by things other than the scaling of your algorithm.
-//     How do the many levels of the memory heirarchy in a computer relate?
-//     How do they perform relative to one another?
-//     How might this have affected other performance tests?
-//   */
-//   {
-//     dispTestName("Iteration test", m);
-//     iterationTest<cs540::Map<int,int>>(10000);
-//     iterationTest<cs540::Map<int,int>>(20000);
-//     iterationTest<cs540::Map<int,int>>(40000);
-//     iterationTest<cs540::Map<int,int>>(80000);
-//     iterationTest<cs540::Map<int,int>>(160000);
-//     iterationTest<cs540::Map<int,int>>(320000);
-//     iterationTest<cs540::Map<int,int>>(640000);
-//     iterationTest<cs540::Map<int,int>>(1280000);
-//     iterationTest<cs540::Map<int,int>>(2560000);
-//     iterationTest<cs540::Map<int,int>>(5120000);
-// #if DO_BIG_ITERATION_TEST
-//     //Optional test. This is more ram than the remote machines have and will likely take a long time to run.
-//     iterationTest<cs540::Map<int,int>>(600000000);
-// #endif
-//     dispTestName("Iteration test", w);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(10000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(20000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(40000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(80000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(160000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(320000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(640000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(1280000);
-//     iterationTest<cs540::StdMapWrapper<int,int>>(5120000);
-// #if DO_BIG_ITERATION_TEST
-//   //Optional test. This is more ram than the remote machines have and will likely take a long time to run.
-//   iterationTest<cs540::Map<int,int>>(600000000);
-// #endif
-//   }
-//
-//   {
-//     //Test copy constructor scaling
-//     dispTestName("Copy test", m);
-//     copyTest<cs540::Map<int,int>>(10000);
-//     copyTest<cs540::Map<int,int>>(100000);
-//     copyTest<cs540::Map<int,int>>(1000000);
-//     copyTest<cs540::Map<int,int>>(10000000);
-//     dispTestName("Copy test", w);
-//     copyTest<cs540::StdMapWrapper<int,int>>(10000);
-//     copyTest<cs540::StdMapWrapper<int,int>>(100000);
-//     copyTest<cs540::StdMapWrapper<int,int>>(1000000);
-//     copyTest<cs540::StdMapWrapper<int,int>>(10000000);
-//   }
+
+  {
+    dispTestName("Ascending insert", m);
+    ascendingInsert<cs540::Map<int,int>>(1000);
+    ascendingInsert<cs540::Map<int,int>>(10000);
+    ascendingInsert<cs540::Map<int,int>>(100000);
+    ascendingInsert<cs540::Map<int,int>>(1000000);
+    ascendingInsert<cs540::Map<int,int>>(10000000);
+    dispTestName("Ascending insert", w);
+    ascendingInsert<cs540::StdMapWrapper<int,int>>(1000);
+    ascendingInsert<cs540::StdMapWrapper<int,int>>(10000);
+    ascendingInsert<cs540::StdMapWrapper<int,int>>(100000);
+    ascendingInsert<cs540::StdMapWrapper<int,int>>(1000000);
+    ascendingInsert<cs540::StdMapWrapper<int,int>>(10000000);
+  }
+
+  {
+    dispTestName("Descending insert", m);
+    descendingInsert<cs540::Map<int,int>>(1000);
+    descendingInsert<cs540::Map<int,int>>(10000);
+    descendingInsert<cs540::Map<int,int>>(100000);
+    descendingInsert<cs540::Map<int,int>>(1000000);
+    descendingInsert<cs540::Map<int,int>>(10000000);
+    dispTestName("Descending insert", w);
+    descendingInsert<cs540::StdMapWrapper<int,int>>(1000);
+    descendingInsert<cs540::StdMapWrapper<int,int>>(10000);
+    descendingInsert<cs540::StdMapWrapper<int,int>>(100000);
+    descendingInsert<cs540::StdMapWrapper<int,int>>(1000000);
+    descendingInsert<cs540::StdMapWrapper<int,int>>(10000000);
+  }
+
+  {
+    dispTestName("Delete test", m);
+    deleteTest<cs540::Map<int,int>>();
+    dispTestName("Delete test", w);
+    deleteTest<cs540::StdMapWrapper<int,int>>();
+  }
+
+  {
+    dispTestName("Find test", m);
+    findTest<cs540::Map<int,int>>();
+    dispTestName("Find test", w);
+    findTest<cs540::StdMapWrapper<int,int>>();
+  }
+
+  /*
+    Remember that some of these maps get quite large - iteration times may be affected by things other than the scaling of your algorithm.
+    How do the many levels of the memory heirarchy in a computer relate?
+    How do they perform relative to one another?
+    How might this have affected other performance tests?
+  */
+  {
+    dispTestName("Iteration test", m);
+    iterationTest<cs540::Map<int,int>>(10000);
+    iterationTest<cs540::Map<int,int>>(20000);
+    iterationTest<cs540::Map<int,int>>(40000);
+    iterationTest<cs540::Map<int,int>>(80000);
+    iterationTest<cs540::Map<int,int>>(160000);
+    iterationTest<cs540::Map<int,int>>(320000);
+    iterationTest<cs540::Map<int,int>>(640000);
+    iterationTest<cs540::Map<int,int>>(1280000);
+    iterationTest<cs540::Map<int,int>>(2560000);
+    iterationTest<cs540::Map<int,int>>(5120000);
+#if DO_BIG_ITERATION_TEST
+    //Optional test. This is more ram than the remote machines have and will likely take a long time to run.
+    iterationTest<cs540::Map<int,int>>(600000000);
+#endif
+    dispTestName("Iteration test", w);
+    iterationTest<cs540::StdMapWrapper<int,int>>(10000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(20000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(40000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(80000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(160000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(320000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(640000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(1280000);
+    iterationTest<cs540::StdMapWrapper<int,int>>(5120000);
+#if DO_BIG_ITERATION_TEST
+  //Optional test. This is more ram than the remote machines have and will likely take a long time to run.
+  iterationTest<cs540::Map<int,int>>(600000000);
+#endif
+  }
+
+  {
+    //Test copy constructor scaling
+    dispTestName("Copy test", m);
+    copyTest<cs540::Map<int,int>>(10000);
+    copyTest<cs540::Map<int,int>>(100000);
+    copyTest<cs540::Map<int,int>>(1000000);
+    copyTest<cs540::Map<int,int>>(10000000);
+    dispTestName("Copy test", w);
+    copyTest<cs540::StdMapWrapper<int,int>>(10000);
+    copyTest<cs540::StdMapWrapper<int,int>>(100000);
+    copyTest<cs540::StdMapWrapper<int,int>>(1000000);
+    copyTest<cs540::StdMapWrapper<int,int>>(10000000);
+  }
 
   //Add your own indexibility scaling test here
 
