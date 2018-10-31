@@ -17,14 +17,16 @@ namespace cs540 {
 
 		class AVLNode{
 		public:
-			ValueType valObj;
+			std::pair<Key_T, Mapped_T> valObj;
 			AVLNode* left = NULL;
 			AVLNode* right = NULL;
 			AVLNode* parent = NULL;
 			int reference_num = 0;
 			int height = 0;
-			AVLNode(const ValueType& vo): valObj(vo){}
-			AVLNode()= delete;
+			AVLNode(ValueType vo) {
+				valObj = vo;
+			}
+			AVLNode(){}
 		};
 
 		class Iterator;
@@ -35,7 +37,7 @@ namespace cs540 {
 		AVLNode* end_node = NULL;
 		size_t size_map = 0;
 
-		Map(){}// default constructor
+		Map(); // default constructor
 		Map(const Map&); // copy constructor
 		Map & operator=(const Map &); // copy assignment operator
 		Map(std::initializer_list<std::pair<const Key_T, Mapped_T>>); // initializer_list constructor
@@ -66,26 +68,18 @@ namespace cs540 {
 		bool operator!=(const Map&);
 		bool operator<(const Map&);
 
-		void printTree_mymap();
-		void printHelper(AVLNode*, int);
-
-	private:
-		int height(AVLNode*);
+	// private:
 		AVLNode* deep_copy(AVLNode*);
 		void copy_assign_helper(AVLNode*);
 		AVLNode* insert_helper(AVLNode*, bool&, const ValueType&);
 		Mapped_T & at_helper(const Key_T &, AVLNode*);
 		const Mapped_T & at_helper_const(const Key_T &, AVLNode*) const;
 		Mapped_T & get_helper(const Key_T &, AVLNode*);
-		AVLNode* find_helper(const Key_T&, AVLNode*) const;
-		void trash(AVLNode*);
-		void erase_helper(const Key_T&, AVLNode*);
+		AVLNode* find_helper(const Key_T&, AVLNode*);
 		bool equal(AVLNode* t1, AVLNode* t2);
 		void clear_helper(AVLNode*);
-		void ll(AVLNode*);
-		void lr(AVLNode*);
-		void rl(AVLNode*);
-		void rr(AVLNode*);
+		void printTree_mymap();
+		void printHelper(AVLNode*, int);
 	};
 
 	template<typename Key_T, typename Mapped_T>
@@ -95,19 +89,17 @@ namespace cs540 {
 		AVLNode* end_node = NULL;
 		Map<Key_T, Mapped_T>* map = NULL;
 		Iterator() = delete;
-		~Iterator(){}
+		~Iterator();
 		Iterator(AVLNode*, Map<Key_T, Mapped_T>*);
 		Iterator(const Iterator&);
 		Iterator& operator++();
-		Iterator operator++(int){Iterator retv = Iterator(this->an, this->map);operator++();return retv;}
+		Iterator operator++(int);
 		Iterator& operator--();
-		Iterator operator--(int) {Iterator retv = Iterator(this->an, this->map);operator--();return retv;}
-		const ValueType & operator*() const{return *(&this->an->valObj);}
-		const ValueType * operator->() const{return &this->an->valObj;}
-		bool operator==(const Iterator & it) {return an == it.an;}
-		bool operator!=(const Iterator & it) {return an != it.an;}
-		bool operator==(const ConstIterator & it) {return an == it.an;}
-		bool operator!=(const ConstIterator & it) {return an != it.an;}
+		Iterator operator--(int);
+		ValueType & operator*() const;
+		ValueType * operator->() const;
+		bool operator==(const Iterator &);
+		bool operator!=(const Iterator &);
 	};
 
 	template<typename Key_T, typename Mapped_T>
@@ -117,19 +109,17 @@ namespace cs540 {
 		AVLNode* end_node = NULL;
 		Map<Key_T, Mapped_T>* map = NULL;
 		ConstIterator() = delete;
-		ConstIterator(AVLNode*, const Map<Key_T, Mapped_T>*);
+		ConstIterator(AVLNode*, Map<Key_T, Mapped_T>*);
 		ConstIterator(const Iterator&);
-		~ConstIterator(){}
+		~ConstIterator();
 		ConstIterator& operator++();
-		ConstIterator operator++(int){ConstIterator retv = ConstIterator(this->an, this->map);operator++();return retv;}
+		ConstIterator operator++(int);
 		ConstIterator& operator--();
-		ConstIterator operator--(int){ConstIterator retv = ConstIterator(this->an, this->map);operator--();return retv;}
-		const ValueType & operator*() const{return *(&this->an->valObj);}
-		const ValueType * operator->() const{return &this->an->valObj;}
-		bool operator==(const ConstIterator & it) {return an == it.an;}
-		bool operator!=(const ConstIterator & it) {return an != it.an;}
-		bool operator==(const Iterator & it) {return an == it.an;}
-		bool operator!=(const Iterator & it) {return an != it.an;}
+		ConstIterator operator--(int);
+		const ValueType & operator*() const;
+		const ValueType * operator->() const;
+		bool operator==(const ConstIterator & it);
+		bool operator!=(const ConstIterator & it);
 	};
 
 	template<typename Key_T, typename Mapped_T>
@@ -141,15 +131,14 @@ namespace cs540 {
 		ReverseIterator() = delete;
 		ReverseIterator(AVLNode*, Map<Key_T, Mapped_T>*);
 		ReverseIterator(const Iterator&);
-		~ReverseIterator(){}
+		~ReverseIterator();
 		ReverseIterator& operator++();
-		ReverseIterator operator++(int){ReverseIterator retv = ReverseIterator(this->an, this->map);operator++();return retv;}
+		ReverseIterator operator++(int);
 		ReverseIterator& operator--();
-		ReverseIterator operator--(int){ReverseIterator retv = ReverseIterator(this->an, this->map);operator--();return retv;}
-		ValueType & operator*() const {return *(&this->an->valObj);}
-		ValueType * operator->() const {return &this->an->valObj;}
-		bool operator== (const ReverseIterator& it) {return an == it.an;}
-		bool operator!= (const ReverseIterator& it) {return an != it.an;}
+		ReverseIterator operator--(int);
+		ValueType & operator*() const;
+		ValueType * operator->() const;
+		bool operator!= (const ReverseIterator&);
 	};
 
 }/*cs540*/

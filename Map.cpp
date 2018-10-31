@@ -5,26 +5,12 @@
 
 namespace cs540{
 	/*
-
-
-
 	Implementation of Map
-
-
-
 	*/
-
-	template<typename Key_T, typename Mapped_T>
-	Map<Key_T, Mapped_T>::Map(){
-		end_node = new AVLNode();
-		end_node->height = -1;
-	}
-
 	template<typename Key_T, typename Mapped_T> // copy constructor
 	Map<Key_T, Mapped_T>::Map(const Map& m){
-		// deep copy
 		this->root = deep_copy(m.root);
-		this->end_node = new AVLNode();
+		this->end_node = new AVLNode(m.end_node->valObj);
 		this->end_node->height = -1;
 		this->size_map = m.size_map;
 	}
@@ -33,12 +19,15 @@ namespace cs540{
 	typename Map<Key_T, Mapped_T>::AVLNode* Map<Key_T, Mapped_T>::deep_copy(AVLNode* node){
 		if (node == NULL) return NULL;
 		AVLNode* copy = new AVLNode(node->valObj);
-		copy->left = deep_copy(node->left);
-		copy->right = deep_copy(node->right);
+		AVLNode* l = deep_copy(node->left);
+		AVLNode* r = deep_copy(node->right);
+		copy->left = l;
+		copy->right = r;
+		if (l != NULL) l->parent = copy;
+		if (r != NULL) r->parent = copy;
+		copy->height = node->height;
 		return copy;
 	}
-
-
 
 	template<typename Key_T, typename Mapped_T>
 	Map<Key_T, Mapped_T>& Map<Key_T, Mapped_T>::operator=(const Map<Key_T, Mapped_T>& m){
@@ -46,20 +35,21 @@ namespace cs540{
 			return *this;
 		}
 		// delete original tree
-		std::queue<AVLNode*> q;
-		if (this->root != NULL) q.push(this->root);
-		AVLNode* node = NULL;
-		while (!q.empty()) {
-			node = q.front();
-			q.pop();
-			if (node->left != NULL) q.push(node->left);
-			if (node->right != NULL) q.push(node->right);
-			if (node->reference_num > 0) {
-				-- node->reference_num;
-			} else if (node->reference_num == 0) {
-				delete(node);
-			}
-		}
+		// std::queue<AVLNode*> q;
+		// if (this->root != NULL) q.push(this->root);
+		// AVLNode* node = NULL;
+		// while (!q.empty()) {
+		// 	node = q.front();
+		// 	q.pop();
+		// 	if (node->left != NULL) q.push(node->left);
+		// 	if (node->right != NULL) q.push(node->right);
+		// 	if (node->reference_num > 0) {
+		// 		-- node->reference_num;
+		// 	} else if (node->reference_num == 0) {
+		// 		delete(node);
+		// 	}
+		// }
+		clear();
 		if (this->end_node != NULL) {
 			if(this->end_node->reference_num > 0) {
 				-- this->end_node->reference_num;
@@ -93,41 +83,18 @@ namespace cs540{
 	template<typename Key_T, typename Mapped_T>
 	Map<Key_T, Mapped_T>::Map(std::initializer_list<std::pair<const Key_T, Mapped_T>> l){
 		this->size_map = 0;
-		for (auto it = l.begin(); it != l.end(); it++) {
+		auto it = l.begin();
+		end_node = new AVLNode(*it);
+		for (; it != l.end(); it++) {
 			insert(*it);
 			++ this->size_map;
 		}
-		end_node = new AVLNode();
 		end_node->height = -1;
 	}
 
 	template<typename Key_T, typename Mapped_T>
 	Map<Key_T, Mapped_T>::~Map(){
-		if (root != NULL) {
-			std::queue<AVLNode*> q;
-			q.push(root);
-			while (!q.empty()) {
-				int size = q.size();
-				for (int i = 0; i < size; ++i) {
-					AVLNode* node = q.front();
-					q.pop();
-					if (node->left != NULL) q.push(node->left);
-					if (node->right != NULL) q.push(node->right);
-					if (node->reference_num > 0) {
-						-- node->reference_num;
-					} else if (node->reference_num == 0) {
-						delete(node);
-					}
-				}
-			}
-		}
-		if (end_node != NULL) {
-			if(end_node->reference_num > 0) {
-				-- end_node->reference_num;
-			} else if (end_node->reference_num == 0) {
-				delete(end_node);
-			}
-		}
+		clear();
 	}
 
 	template<typename Key_T, typename Mapped_T>
@@ -209,7 +176,7 @@ namespace cs540{
 	}
 
 	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::AVLNode* Map<Key_T, Mapped_T>::find_helper(const Key_T& k, AVLNode* node){
+	typename Map<Key_T, Mapped_T>::AVLNode* Map<Key_T, Mapped_T>::find_helper(const Key_T& k, AVLNode* node) const{
 		if (node == NULL) return NULL;
 		if (node->valObj.first == k) {
 			return node;
@@ -262,11 +229,13 @@ namespace cs540{
 		}
 	}
 
+
 	template<typename Key_T, typename Mapped_T>
 	Mapped_T & Map<Key_T, Mapped_T>::operator[](const Key_T & k) {
 		if (root == NULL) {
-			root = new AVLNode();
-			root->valObj.first = k;
+			root = new AVLNode(ValueType(k, Mapped_T()));
+			end_node = new AVLNode(ValueType(k, Mapped_T()));
+			end_node->height = -1;
 			return *(&root->valObj.second);
 		} else {
 			return get_helper(k, root);
@@ -279,27 +248,47 @@ namespace cs540{
 			return *(&node->valObj.second);
 		} else if (k < node->valObj.first) {
 			if (node->left == NULL) {
-				AVLNode* n = new AVLNode();
+				AVLNode* n = new AVLNode(ValueType(k,Mapped_T()));
 				node->left = n;
-				node->left->valObj.first = k;
 				n->parent = node;
 				n->reference_num = node->reference_num;
+				node->height = std::max(height(node->left), height(node->right))+1;
 				return *(&n->valObj.second);
 			} else {
-				return get_helper(k, node->left);
+				Mapped_T& v = get_helper(k, node->left);
+				// adjust balance
+				if (height(node->left)-height(node->right) == 2) {
+					if (k < node->left->valObj.first) ll(node);
+					else lr(node);
+				}
+				node->height = std::max(height(node->left), height(node->right))+1;
+				return v;
 			}
 		} else {
 			if (node->right == NULL) {
-				AVLNode* n = new AVLNode();
+				AVLNode* n = new AVLNode(ValueType(k,Mapped_T()));
 				node->right = n;
-				node->right->valObj.first = k;
 				n->parent = node;
 				n->reference_num = node->reference_num;
+				node->height = std::max(height(node->left), height(node->right))+1;
 				return *(&n->valObj.second);
 			} else {
-				return get_helper(k, node->right);
+				Mapped_T& v = get_helper(k, node->right);
+				// adjust balance
+				if (height(node->right)-height(node->left) == 2) {
+					if (k < node->right->valObj.first) rl(node);
+					else rr(node);
+				}
+				node->height = std::max(height(node->left), height(node->right))+1;
+				return v;
 			}
 		}
+	}
+
+	template<typename Key_T, typename Mapped_T>
+	int Map<Key_T, Mapped_T>::height( Map<Key_T, Mapped_T>::AVLNode* node){
+		if (node == NULL) return -1;
+		else return node->height;
 	}
 
 	template<typename Key_T, typename Mapped_T>
@@ -307,9 +296,10 @@ namespace cs540{
 	Map<Key_T, Mapped_T>::insert_helper(AVLNode* cur, bool& insert_ok, const ValueType& v) {
 		typename Map<Key_T, Mapped_T>::AVLNode* n;
 		if (root == NULL) {
-			n = new typename Map<Key_T, Mapped_T>::AVLNode(v);
+			n = new AVLNode(v);
+			end_node = new AVLNode(v);
+			end_node->height = -1;
 			if (n == NULL) {
-				// std::cout << "Fail to create a TreeNode." << '\n';
 				insert_ok = false;
 				return NULL;
 			}
@@ -320,27 +310,27 @@ namespace cs540{
 		if (v.first < cur->valObj.first) {
 			// left
 			if (cur->left == NULL) {
-				n = new typename Map<Key_T, Mapped_T>::AVLNode(v);
+				n = new AVLNode(v);
 				cur->left = n;
 				n->parent = cur;
 				insert_ok = true;
 				n->reference_num = cur->reference_num;
 			} else {
 				n = insert_helper(cur->left, insert_ok, v);
+				if (height(cur->left)- height(cur->right) == 2) {
+					if (v.first < cur->left->valObj.first) ll(cur);
+					else lr(cur);
+				}
 			}
-
-			// adjust the balance
-
+			cur->height = std::max(height(cur->left), height(cur->right))+1;
 			return n;
 		} else if (cur->valObj.first == v.first) {
 			// repeat
-			// std::cout << "Fail to insert the TreeNode: Repeated value." << '\n';
 			insert_ok = false;
-			return NULL;
+			return cur;
 		} else  {
 			// right
 			if (cur->right == NULL) {
-				// Map<Key_T, Mapped_T>::ValueType va = std::make_pair(v.first, v.second);
 				n = new typename Map<Key_T, Mapped_T>::AVLNode(v);
 				cur->right = n;
 				n->parent = cur;
@@ -348,10 +338,12 @@ namespace cs540{
 				n->reference_num = cur->reference_num;
 			} else {
 				n = insert_helper(cur->right, insert_ok, v);
+				if (height(cur->right)-height(cur->left) == 2) {
+					if (v.first < cur->right->valObj.first) rl(cur);
+					else rr(cur);
+				}
 			}
-
-			// adjust the balance
-
+			cur->height = std::max(height(cur->left), height(cur->right))+1;
 			return n;
 		}
 	}
@@ -360,113 +352,42 @@ namespace cs540{
 	std::pair<typename Map<Key_T, Mapped_T>::Iterator, bool>
 	Map<Key_T, Mapped_T>::insert(const ValueType& v) {
 		bool insert_ok = false;
-		typename Map<Key_T, Mapped_T>::AVLNode* node = insert_helper(root, insert_ok, v);
-		typename Map<Key_T, Mapped_T>::Iterator it(node, this);
+		AVLNode* node = insert_helper(root, insert_ok, v);
+		Iterator it(node, this);
 		return std::make_pair(it, insert_ok);
 	}
 
 	template<typename Key_T, typename Mapped_T>
 	template <typename IT_T>
 	void Map<Key_T, Mapped_T>::insert(IT_T range_beg, IT_T range_end) {
-
+		IT_T it = range_beg;
+		for(; it != range_end; ++it) insert(*it);
 	}
 
 	template<typename Key_T, typename Mapped_T>
 	void Map<Key_T, Mapped_T>::erase(Iterator pos) {
-		AVLNode* res = pos.an;
-		if (res != NULL)  {
-			if (res->left == NULL && res->right == NULL) {
-				if (res->parent == NULL) {
-					this->root = NULL;
-				} else {
-					if (res == res->parent->left) {
-						res->parent->left = NULL;
-					} else {
-						res->parent->right = NULL;
-					}
-				}
-				delete(res);
-			} else if (res->left != NULL && res->right != NULL){
-				AVLNode* replace = res->left;
-				if (replace->right == NULL) {
-					replace->right = res->right;
-					res->right->parent = replace;
-					if (res->parent == NULL) {
-						replace->parent = NULL;
-						this->root = replace;
-						delete(res);
-					} else {
-						replace->parent = res->parent;
-						if (res == res->parent->left) {
-							res->parent->left = replace;
-						} else {
-							res->parent->right = replace;
-						}
-						delete(res);
-					}
-				} else {
-					while (replace->right != NULL) replace = replace->right;
-					if (replace->left != NULL) {
-						replace->parent->right = replace->left;
-						replace->left->parent = replace->parent;
-					} else {
-						replace->parent->right = NULL;
-					}
-					if (res->parent == NULL) {
-						replace->parent = NULL;
-						this->root = replace;
-					} else {
-						replace->parent = res->parent;
-						if (res->parent->right == res) {
-							res->parent->right = replace;
-						} else {
-							res->parent->left = replace;
-						}
-					}
-					replace->left = res->left;
-					res->left->parent = replace;
-					replace->right = res->right;
-					res->right->parent = replace;
-					delete(res);
-				}
-
-			} else {
-				if (res->left == NULL) {
-					if (res->parent == NULL) {
-						this->root = res->right;
-						this->root->parent = NULL;
-						delete(res);
-					} else {
-						res->right->parent = res->parent;
-						if (res == res->parent->left) {
-							res->parent->left = res->right;
-						} else {
-							res->parent->right = res->right;
-						}
-						delete(res);
-					}
-				} else if (res->right == NULL) {
-					if (res->parent == NULL) {
-						this->root = res->left;
-						this->root->parent = NULL;
-						delete(res);
-					} else {
-						res->left->parent = res->parent;
-						if (res == res->parent->left) {
-							res->parent->left = res->left;
-						} else {
-							res->parent->right = res->left;
-						}
-						delete(res);
-					}
-				}
-			}
-		}
+		erase_helper(pos.an->valObj.first, root);
 	}
 
 	template<typename Key_T, typename Mapped_T>
 	void Map<Key_T, Mapped_T>::erase(const Key_T& k) {
-		AVLNode* res = find_helper(k, root);
+		erase_helper(k, root);
+	}
+	template<typename Key_T, typename Mapped_T>
+	void Map<Key_T, Mapped_T>::erase_helper(const Key_T& k, AVLNode* n) {
+		if (n == NULL) return;
+		if (n->valObj.first == k) {
+			AVLNode* p = n->parent;
+			trash(n);
+			n->height = std::max(height(n->left), height(n->right))+1;
+			return;
+		}
+		if (k < n->valObj.first) return erase_helper(k, n->left);
+		else return erase_helper(k, n->right);
+	}
+
+	template<typename Key_T, typename Mapped_T>
+	void Map<Key_T, Mapped_T>::trash(AVLNode* res) {
 		if (res != NULL)  {
 			if (res->left == NULL && res->right == NULL) {
 				if (res->parent == NULL) {
@@ -559,8 +480,14 @@ namespace cs540{
 
 	template<typename Key_T, typename Mapped_T>
 	void Map<Key_T, Mapped_T>::clear() {
-		if (root == NULL) return;
-		clear_helper(root);
+		if (root != NULL) clear_helper(root);
+		if (this->end_node != NULL) {
+			if(this->end_node->reference_num > 0) {
+				-- this->end_node->reference_num;
+			} else if (this->end_node->reference_num == 0) {
+				delete(this->end_node);
+			}
+		}
 	}
 	template<typename Key_T, typename Mapped_T>
 	void Map<Key_T, Mapped_T>::clear_helper(AVLNode* node) {
@@ -587,7 +514,17 @@ namespace cs540{
 
 	template<typename Key_T, typename Mapped_T>
 	bool Map<Key_T, Mapped_T>::operator<(const Map<Key_T, Mapped_T>& m) {
-
+		auto t1 = this->begin();
+		auto t2 = m.begin();
+		auto e1 = this->end();
+		auto e2 = m.end();
+		for (; t1 != e1 && t2 != e2; ) {
+			if (t1.an->valObj.first == t2.an->valObj.first) {++t1; ++t2;}
+			else if (t1.an->valObj.first < t2.an->valObj.first) {return true;}
+			else return false;
+		}
+		if (t1 == e1) return true;
+		else return false;
 	}
 
 	template<typename Key_T, typename Mapped_T>
@@ -601,11 +538,6 @@ namespace cs540{
 	}
 
 	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::AVLNode* l_l_rotate(typename Map<Key_T, Mapped_T>::AVLNode* n) {
-
-	}
-
-	template<typename Key_T, typename Mapped_T>
 	void Map<Key_T, Mapped_T>::printTree_mymap() {
 		printHelper(root, 0);
 	}
@@ -614,24 +546,61 @@ namespace cs540{
 	void Map<Key_T, Mapped_T>::printHelper(typename Map<Key_T, Mapped_T>::AVLNode* cur, int level) {
 		if (cur == NULL) return;
 		printHelper(cur->left, level+1);
-		std::cout << std::setw(10*level) << cur->valObj.first << "," << cur->valObj.second << "#" << cur->reference_num << std::endl;
+		std::cout << std::setw(10*level) << cur->valObj.first << "," << cur->valObj.second << "#" << cur->height << std::endl;
 		printHelper(cur->right, level+1);
 	}
 
-	/*
-
-
-
-	Implementation of Iterator
-
-
-
-	*/
+	template<typename Key_T, typename Mapped_T>
+	void Map<Key_T, Mapped_T>::ll(typename Map<Key_T, Mapped_T>::AVLNode* n) {
+		AVLNode* t = n->left;
+		AVLNode* p = n->parent;
+		AVLNode* x = t->right;
+		if (x == NULL) {n->left = NULL;}
+		else {n->left = x; x->parent = n;}
+		t->right = n;
+		n->parent = t;
+		if (p == NULL) {t->parent = NULL; root = t;}
+		else {
+			t->parent = p;
+			if (n == p->right) p->right = t;
+			else p->left = t;
+		}
+		n->height = std::max(height(n->left), height(n->right))+1;
+		t->height = std::max(height(t->left), height(t->right))+1;
+	}
 
 	template<typename Key_T, typename Mapped_T>
-	Map<Key_T, Mapped_T>::Iterator::~Iterator() {
-		// nothing to free
+	void Map<Key_T, Mapped_T>::lr(typename Map<Key_T, Mapped_T>::AVLNode* n) {
+		rr(n->left); ll(n);
 	}
+
+	template<typename Key_T, typename Mapped_T>
+	void Map<Key_T, Mapped_T>::rl(typename Map<Key_T, Mapped_T>::AVLNode* n) {
+		ll(n->right); rr(n);
+	}
+
+	template<typename Key_T, typename Mapped_T>
+	void Map<Key_T, Mapped_T>::rr(typename Map<Key_T, Mapped_T>::AVLNode* n) {
+		AVLNode* t = n->right;
+		AVLNode* p = n->parent;
+		AVLNode* x = t->left;
+		if (x != NULL) {n->right = x; x->parent = n;}
+		else {n->right = NULL;}
+		n->parent = t;
+		t->left = n;
+		if (p != NULL) {
+			t->parent = p;
+			if (n == p->left) p->left = t;
+			else p->right = t;
+		}
+		else {root = t; t->parent = NULL;}
+		n->height = std::max(height(n->left), height(n->right))+1;
+		t->height = std::max(height(t->left), height(t->right))+1;
+	}
+
+	/*
+	Implementation of Iterator
+	*/
 	template<typename Key_T, typename Mapped_T>
 	Map<Key_T, Mapped_T>::Iterator::Iterator(AVLNode* an, Map<Key_T, Mapped_T>* map) {
 		this->an = an;
@@ -647,7 +616,6 @@ namespace cs540{
 	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::Iterator&
 	Map<Key_T, Mapped_T>::Iterator::operator++() {
-		// std::cout << "called ++\n";
 		if (this->an == end_node) {
 			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
 			return *this;
@@ -661,7 +629,6 @@ namespace cs540{
 					tmp = tmp->parent;
 				}
 				if (tmp->parent == NULL) {
-					// the last one
 					this->an = this->end_node;
 					return *this;
 				} else {
@@ -675,39 +642,6 @@ namespace cs540{
 			}
 		}
 		return *this;
-	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::Iterator
-	Map<Key_T, Mapped_T>::Iterator::operator++(int){
-		// std::cout << "called ++(int)\n";
-		Iterator retv = Iterator(this->an, this->map);
-		if (this->an == end_node) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
-			return retv;
-		} else if (this->an == NULL) {
-			std::cout <<"cs540::Segmentation Fault. Cannot go to the next of NULL.\n";
-			return retv;
-		} else {
-			if (this->an->right == NULL) {
-				AVLNode* tmp = this->an;
-				while (tmp->parent != NULL && tmp->parent->right == tmp) {
-					tmp = tmp->parent;
-				}
-				if (tmp->parent == NULL) {
-					// the last one
-					this->an = this->end_node;
-					return retv;
-				} else {
-					this->an = tmp->parent;
-					return retv;
-				}
-			} else {
-				this->an = this->an->right;
-				while (this->an->left != NULL) this->an = this->an->left;
-				return retv;
-			}
-		}
-		return retv;
 	}
 	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::Iterator&
@@ -750,86 +684,14 @@ namespace cs540{
 			}
 		}
 	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::Iterator
-	Map<Key_T, Mapped_T>::Iterator::operator--(int) {
-		Iterator retv = Iterator(this->an, this->map);
-		if (this->an == NULL) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the previous of NULL.\n";
-			return retv;
-		} else if (this->an == end_node) {
-			AVLNode* tmp = this->map->root;
-			if (tmp == NULL) {
-				std::cout << "cs540::Undefined Behavior. Cannot go to the previous of NULL root.\n";
-				return retv;
-			}
-			while (tmp->right != NULL) tmp = tmp->right;
-			this->an = tmp;
-			return retv;
-		} else {
-			if (this->an->left == NULL) {
-				AVLNode* tmp = this->an;
-				if (tmp == tmp->parent->right) {
-					tmp = tmp->parent;
-					this->an = tmp;
-					return retv;
-				} else {
-					while (tmp->parent != NULL && tmp == tmp->parent->left) {
-						tmp = tmp->parent;
-					}
-					if (tmp->parent == NULL) {
-						std::cout << "cs540::Undefined Behavior. Cannot go to the previous of begin.\n";
-						return retv;
-					} else {
-						tmp = tmp->parent;
-						this->an = tmp;
-						return retv;
-					}
-				}
-			} else {
-				this->an = this->an->left;
-				return retv;
-			}
-		}
-	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ValueType&
-	Map<Key_T, Mapped_T>::Iterator::operator*() const {
-		return *(&this->an->valObj);
-	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ValueType*
-	Map<Key_T, Mapped_T>::Iterator::operator->() const {
-		return &this->an->valObj;
-	}
-	template<typename Key_T, typename Mapped_T>
-	bool Map<Key_T, Mapped_T>::Iterator::operator==(const Iterator & it) {
-		if (this->map == it.map && this->an == it.an) {
-			return true;
-		}
-		return false;
-	}
-	template<typename Key_T, typename Mapped_T>
-	bool Map<Key_T, Mapped_T>::Iterator::operator!=(const Iterator & it) {
-		if (this->map == it.map && this->an == it.an) {
-			return false;
-		}
-		return true;
-	}
 
 	/*
-
-
-
 	Implementation of ConstIterator
-
-
-
 	*/
 	template<typename Key_T, typename Mapped_T>
-	Map<Key_T, Mapped_T>::ConstIterator::ConstIterator(AVLNode* an, Map<Key_T, Mapped_T>* map) {
+	Map<Key_T, Mapped_T>::ConstIterator::ConstIterator(AVLNode* an, const Map<Key_T, Mapped_T>* map) {
 		this->an = an;
-		this->map = map;
+		this->map = const_cast<Map<Key_T, Mapped_T>*>(map);
 		this->end_node = map->end_node;
 	}
 	template<typename Key_T, typename Mapped_T>
@@ -839,13 +701,8 @@ namespace cs540{
 		this->end_node = it.end_node;
 	}
 	template<typename Key_T, typename Mapped_T>
-	Map<Key_T, Mapped_T>::ConstIterator::~ConstIterator(){
-		// nothing to free
-	}
-	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::ConstIterator&
 	Map<Key_T, Mapped_T>::ConstIterator::operator++() {
-		std::cout << "called const ++\n";
 		if (this->an == end_node) {
 			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
 			return *this;
@@ -863,7 +720,8 @@ namespace cs540{
 					this->an = this->end_node;
 					return *this;
 				} else {
-					this->an = this->an->parent;
+					this->an = tmp->parent;
+					return *this;
 				}
 			} else {
 				this->an = this->an->right;
@@ -874,41 +732,8 @@ namespace cs540{
 		return *this;
 	}
 	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ConstIterator
-	Map<Key_T, Mapped_T>::ConstIterator::operator++(int inc) {
-		std::cout << "called const ++(int)\n";
-		ConstIterator retv = ConstIterator(this->an, this->map);
-		if (this->an == end_node) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
-			return retv;
-		} else if (this->an == NULL) {
-			std::cout <<"cs540::Segmentation Fault. Cannot go to the next of NULL.\n";
-			return retv;
-		} else {
-			if (this->an->right == NULL) {
-				AVLNode* tmp = this->an;
-				while (tmp->parent != NULL && tmp->parent->right == tmp) {
-					tmp = tmp->parent;
-				}
-				if (tmp->parent == NULL) {
-					// the last one
-					this->an = this->end_node;
-					return retv;
-				} else {
-					this->an = this->an->parent;
-				}
-			} else {
-				this->an = this->an->right;
-				while (this->an->left != NULL) this->an = this->an->left;
-				return retv;
-			}
-		}
-		return retv;
-	}
-	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::ConstIterator&
 	Map<Key_T, Mapped_T>::ConstIterator::operator--() {
-		std::cout << "called const --\n";
 		if (this->an == NULL) {
 			std::cout << "cs540::Segmentation Fault. Cannot go to the previous of NULL.\n";
 			return *this;
@@ -947,80 +772,8 @@ namespace cs540{
 			}
 		}
 	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ConstIterator
-	Map<Key_T, Mapped_T>::ConstIterator::operator--(int dec) {
-		std::cout << "called const --(int)\n";
-		ConstIterator retv = ConstIterator(this->an, this->map);
-		if (this->an == NULL) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the previous of NULL.\n";
-			return retv;
-		} else if (this->an == end_node) {
-			AVLNode* tmp = this->map->root;
-			if (tmp == NULL) {
-				std::cout << "cs540::Undefined Behavior. Cannot go to the previous of NULL root.\n";
-				return retv;
-			}
-			while (tmp->right != NULL) tmp = tmp->right;
-			this->an = tmp;
-			return retv;
-		} else {
-			if (this->an->left == NULL) {
-				AVLNode* tmp = this->an;
-				if (tmp == tmp->parent->right) {
-					tmp = tmp->parent;
-					this->an = tmp;
-					return retv;
-				} else {
-					while (tmp->parent != NULL && tmp == tmp->parent->left) {
-						tmp = tmp->parent;
-					}
-					if (tmp->parent == NULL) {
-						std::cout << "cs540::Undefined Behavior. Cannot go to the previous of begin.\n";
-						return retv;
-					} else {
-						tmp = tmp->parent;
-						this->an = tmp;
-						return retv;
-					}
-				}
-			} else {
-				this->an = this->an->left;
-				return retv;
-			}
-		}
-	}
-	template<typename Key_T, typename Mapped_T>
-	const typename Map<Key_T, Mapped_T>::ValueType&
-	Map<Key_T, Mapped_T>::ConstIterator::operator*() const {
-		return *(&this->an->valObj);
-	}
-	template<typename Key_T, typename Mapped_T>
-	const typename Map<Key_T, Mapped_T>::ValueType*
-	Map<Key_T, Mapped_T>::ConstIterator::operator->() const {
-		return &this->an->valObj;
-	}
-	template<typename Key_T, typename Mapped_T>
-	bool Map<Key_T, Mapped_T>::ConstIterator::operator==
-	(const Map<Key_T, Mapped_T>::ConstIterator& it) {
-		if (this->map == it.map && this->an == it.an) return true;
-		else return false;
-	}
-	template<typename Key_T, typename Mapped_T>
-	bool Map<Key_T, Mapped_T>::ConstIterator::operator!=
-	(const Map<Key_T, Mapped_T>::ConstIterator& it) {
-		if (this->map == it.map && this->an == it.an) return false;
-		else return true;
-	}
-
 	/*
-
-
-
 	Implementation of ReverseIterator
-
-
-
 	*/
 	template<typename Key_T, typename Mapped_T>
 	Map<Key_T, Mapped_T>::ReverseIterator::ReverseIterator(AVLNode* an, Map<Key_T, Mapped_T>* map) {
@@ -1035,10 +788,6 @@ namespace cs540{
 		this->an = it.an;
 		this->map = it.map;
 		this->end_node = it.end_node;
-	}
-	template<typename Key_T, typename Mapped_T>
-	Map<Key_T, Mapped_T>::ReverseIterator::~ReverseIterator() {
-		// nothing to free
 	}
 	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::ReverseIterator&
@@ -1070,177 +819,29 @@ namespace cs540{
 		}
 	}
 	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ReverseIterator
-	Map<Key_T, Mapped_T>::ReverseIterator::operator++(int inc){
-		ReverseIterator retv = ReverseIterator(this->an, this->map);
-		if (this->an == NULL) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the previous of NULL.\n";
-			return retv;
-		} else if (this->an == this->end_node) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the next of end.\n";
-			return retv;
-		} else {
-			if (this->an->left == NULL) {
-				AVLNode* tmp = this->an;
-				while (tmp->parent != NULL && tmp == tmp->parent->left) {
-					tmp = tmp->parent;
-				}
-				if (tmp->parent == NULL) {
-					// last one
-					this->an = this->end_node;
-					return retv;
-				} else {
-					this->an = tmp->parent;
-					return retv;
-				}
-			} else {
-				AVLNode* tmp = this->an;
-				tmp = tmp->left;
-				while (tmp->right != NULL) tmp = tmp->right;
-				this->an = tmp;
-				return retv;
-			}
-		}
-	}
-
-	template<typename Key_T, typename Mapped_T>
 	typename Map<Key_T, Mapped_T>::ReverseIterator&
 	Map<Key_T, Mapped_T>::ReverseIterator::operator--(){
-		if (this->an == end_node) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
+		if (an == NULL) {
+			std::cout << "ReverseIterator Cannot go to next of NULL.\n";
 			return *this;
-		} else if (this->an == NULL) {
-			std::cout <<"cs540::Segmentation Fault. Cannot go to the next of NULL.\n";
+		}
+		if (an == end_node) {
+			AVLNode* tmp = map->root;
+			if (tmp == NULL) {std::cout << "ReverseIterator Cannot go to next of NULL.\n"; return *this;}
+			while (tmp->left != NULL) tmp = tmp->left;
+			an = tmp;
 			return *this;
+		}
+		AVLNode* tmp = an;
+		if (tmp->right == NULL) {
+			while (tmp->parent != NULL && tmp->parent->right == tmp) tmp = tmp->parent;
+			if (tmp->parent == NULL) an = end_node;
+			else an = tmp->parent;
 		} else {
-			if (this->an->right == NULL) {
-				AVLNode* tmp = this->an;
-				while (tmp->parent != NULL && tmp->parent->right == tmp) {
-					tmp = tmp->parent;
-				}
-				if (tmp->parent == NULL) {
-					// the last one
-					this->an = this->end_node;
-					return *this;
-				} else {
-					this->an = this->an->parent;
-				}
-			} else {
-				this->an = this->an->right;
-				while (this->an->left != NULL) this->an = this->an->left;
-				return *this;
-			}
+			tmp = tmp->right;
+			while (tmp->left != NULL) tmp = tmp->left;
+			an = tmp;
 		}
 		return *this;
 	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ReverseIterator
-	Map<Key_T, Mapped_T>::ReverseIterator::operator--(int dec){
-		ReverseIterator retv = ReverseIterator(this->an, this->map);
-		if (this->an == end_node) {
-			std::cout << "cs540::Segmentation Fault. Cannot go to the next of last element.\n";
-			return retv;
-		} else if (this->an == NULL) {
-			std::cout <<"cs540::Segmentation Fault. Cannot go to the next of NULL.\n";
-			return retv;
-		} else {
-			if (this->an->right == NULL) {
-				AVLNode* tmp = this->an;
-				while (tmp->parent != NULL && tmp->parent->right == tmp) {
-					tmp = tmp->parent;
-				}
-				if (tmp->parent == NULL) {
-					// the last one
-					this->an = this->end_node;
-					return retv;
-				} else {
-					this->an = this->an->parent;
-				}
-			} else {
-				this->an = this->an->right;
-				while (this->an->left != NULL) this->an = this->an->left;
-				return retv;
-			}
-		}
-		return retv;
-	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ValueType&
-	Map<Key_T, Mapped_T>::ReverseIterator::operator*() const{
-		return *(&this->an->valObj);
-	}
-	template<typename Key_T, typename Mapped_T>
-	typename Map<Key_T, Mapped_T>::ValueType*
-	Map<Key_T, Mapped_T>::ReverseIterator::operator->() const{
-		return &this->an->valObj;
-	}
-
-	/*
-
-
-
-	Implementation of Iterators comparison
-
-
-
-	*/
-	//
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator== (const typename Map<Key_T, Mapped_T>::Iterator& it1, const typename Map<Key_T, Mapped_T>::Iterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return true;
-	// 	return false;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator== (const typename Map<Key_T, Mapped_T>::ConstIterator& it1, const typename Map<Key_T, Mapped_T>::ConstIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return true;
-	// 	return false;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator== (const typename Map<Key_T, Mapped_T>::Iterator& it1, const typename Map<Key_T, Mapped_T>::ConstIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return true;
-	// 	return false;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator== (const typename Map<Key_T, Mapped_T>::ConstIterator& it1, const typename Map<Key_T, Mapped_T>::Iterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return true;
-	// 	return false;
-	// }
-	//
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator!= (const typename Map<Key_T, Mapped_T>::Iterator& it1, const typename Map<Key_T, Mapped_T>::Iterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return false;
-	// 	return true;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator!= (const typename Map<Key_T, Mapped_T>::ConstIterator& it1, const typename Map<Key_T, Mapped_T>::ConstIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return false;
-	// 	return true;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator!= (const typename Map<Key_T, Mapped_T>::Iterator& it1, const typename Map<Key_T, Mapped_T>::ConstIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return false;
-	// 	return true;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator!= (const typename Map<Key_T, Mapped_T>::ConstIterator& it1, const typename Map<Key_T, Mapped_T>::Iterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return false;
-	// 	return true;
-	// }
-	//
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator!= (const typename Map<Key_T, Mapped_T>::ReverseIterator& it1, const typename Map<Key_T, Mapped_T>::ReverseIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return false;
-	// 	return true;
-	// }
-	// template<typename Key_T, typename Mapped_T>
-	// bool operator== (const typename Map<Key_T, Mapped_T>::ReverseIterator& it1, const typename Map<Key_T, Mapped_T>::ReverseIterator& it2){
-	// 	if (it1.an == it2.an && it1.map == it2.map) return true;
-	// 	return false;
-	// }
-	template<typename Key_T, typename Mapped_T>
-	bool Map<Key_T, Mapped_T>::ReverseIterator::operator!= (const ReverseIterator& it) {
-		if (this->an == it.an && this->map == it.map) return false;
-		return true;
-	}
-
 }

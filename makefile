@@ -1,7 +1,7 @@
 CPPFLAGS= -Wall -Wextra -pedantic
 
-all: Map.cpp Map.hpp test.cpp
-	g++ -std=c++11 test.cpp -o test
+all: Map.hpp test-scaling.cpp
+	g++ -std=c++11 test-scaling.cpp -o test
 
 run:
 	./test
